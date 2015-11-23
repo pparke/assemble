@@ -20,8 +20,8 @@ class Assembler {
       bss: {
         memory: [],
         labels: {}
-      },
-    }
+      }
+    };
 
     this.symbols = {};
     this.labels = {};
@@ -33,6 +33,7 @@ class Assembler {
   load (file) {
     let program = this.preprocess(file);
     program = this.extractDefinitions(program);
+    program = this.extractLabels(program);
     program = this.assemble(program);
     return program;
   }
@@ -49,7 +50,7 @@ class Assembler {
     // split on linebreak
     let lines = file.toLowerCase().split('\n');
     // remove comments and commas
-    return lines.map((line) => {
+    let out = lines.map((line) => {
       // match anything after a semicolon and remove
       line = line.replace(/;.+$/, '');
 
@@ -68,12 +69,22 @@ class Assembler {
       // replace all commas with spaces and trim trailing whitespace
       line = line.replace(/,/g, ' ').trim();
 
+      // replace hex number e.g. '01H' with their integer value
+      line = line.replace(/[a-fA-F0-9]+h/, (str) => {
+        // remove the H
+        str = str.substr(0, str.length - 1);
+        // parse as a hex value
+        return parseInt(str, 16);
+      });
+
       return line;
     })
     // eliminate any empty lines
     .filter((line) => {
       return line.length > 0;
     });
+
+    return out;
   }
 
   /**
@@ -107,6 +118,37 @@ class Assembler {
   }
 
   /**
+   * Extract Labels
+   */
+  extractLabels (lines) {
+    let pointer = 0;
+    lines = lines.reduce((sequence, line, i) => {
+      // split into tokens by whitespace
+      let lineArr = line.split(/\s+/);
+      // check if there is a label
+      if (lineArr[0].indexOf(':') > -1) {
+        let label = lineArr[0].replace(':', '');
+        lineArr = lineArr.slice(1);
+        this.labels[label] = pointer;
+
+      }
+      // if there's nothing else on the line, discard it by not incrementing the pointer
+      // and not adding it to the sequence
+      // otherwise add the rest of the line back to the sequence
+      if (lineArr.length !== 0) {
+        pointer += lineArr.length;
+        sequence.push(lineArr.join(' '));
+      }
+
+      return sequence;
+
+    }, []);
+    console.log(lines.join('\n'))
+    console.log(this.labels)
+    return lines;
+  }
+
+  /**
    * Assemble
    * @param {array} lines - the array of lines to process
    * @param {array} the output array of encoded instructions
@@ -115,12 +157,6 @@ class Assembler {
     let output = lines.reduce((sequence, line, i) => {
       // split into tokens by whitespace
       let lineArr = line.split(/\s+/);
-      // check if there is a label
-      if (lineArr[0].indexOf(':') > -1) {
-        let label = lineArr[0].replace(':', '');
-        this.labels[label] = this.content.length;
-        lineArr = lineArr.slice(1);
-      }
       //let [op, arg1, arg2] = lineArr;
       let op = lineArr[0], arg1 = lineArr[1], arg2 = lineArr[2];
       let arg1T, arg2T, arg1D, arg2D;

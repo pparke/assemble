@@ -78,7 +78,11 @@
        bin: 2
      };
 
-     return this.value.toString(fmts[key]);
+     let str = this.value.toString(fmts[key]);
+     let pad = 4 - str.length;
+     // pad out the string with zeros
+     str = new Array(pad).fill('0').join('') + str;
+     return str.toUpperCase();
    }
  }
 

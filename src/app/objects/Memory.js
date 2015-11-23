@@ -27,30 +27,50 @@ class Memory {
     }
   }
 
+  /**
+   * Get High
+   * Get the high byte of the memory location.
+   */
   getHigh (addr) {
     // make sure that the address is within bounds
     addr = Memory.wrap(addr, this.SIZE);
     return this.data[addr] << 8;
   }
 
+  /**
+   * Set High
+   * Set the high byte of the memory location.
+   */
   setHigh (addr, v) {
     // make sure that the address is within bounds
     addr = Memory.wrap(addr, this.SIZE);
     this.data[addr] = (this.data[addr] | 0xFF00) & (v | 0x00FF);
   }
 
+  /**
+   * Get Low
+   * Get the low byte of the memory location.
+   */
   getLow (addr) {
     // make sure that the address is within bounds
     addr = Memory.wrap(addr, this.SIZE);
-    return this.data[addr] & 0x00FF
+    return this.data[addr] & 0x00FF;
   }
 
+  /**
+   * Set Low
+   * Set the low byte of the memory location.
+   */
   setLow (addr, v) {
     // make sure that the address is within bounds
     addr = Memory.wrap(addr, this.SIZE);
     this.data[addr] = (this.data[addr] | 0x00FF) & (v | 0xFF00);
   }
 
+  /**
+   * Get Word
+   * Get the full word at the memory location.
+   */
   getWord (addr) {
     // make sure that the address is within bounds
     addr = Memory.wrap(addr, this.SIZE);
@@ -59,6 +79,10 @@ class Memory {
     return this.data[addr];
   }
 
+  /**
+   * Set Word
+   * Set the full word at the memory location.
+   */
   setWord (addr, value) {
     // make sure that the address is within bounds
     addr = Memory.wrap(addr, this.SIZE);
@@ -91,16 +115,16 @@ class Memory {
    */
   static wrap (input, target) {
     if (input >= target) {
-  		input -= target;
-  		return Memory.wrap(input, target);
-  	}
-  	else if (input < 0) {
-  		input += target;
-  		return Memory.wrap(input, target);
-  	}
-  	else {
-  		return input;
-  	}
+      input -= target;
+      return Memory.wrap(input, target);
+    }
+    else if (input < 0) {
+      input += target;
+      return Memory.wrap(input, target);
+    }
+    else {
+      return input;
+    }
   }
 }
 

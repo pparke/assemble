@@ -24,25 +24,25 @@
        step: new Phaser.Signal()
      };
 
-     this.registers           = {
-        'A': new Register(),             // Accumulator, io, arithmetic, interrupt
-		    'B': new Register(),             // Base, base pointer for memory access
-		    'C': new Register(),             // Counter, loop counter, shifts
-		    'D': new Register(),             // Data, io, arithmetic, interrupt
-        // Segment registers
-        'CS': new Register(),            // Code, segment in which the program runs
-        'DS': new Register(),            // Data, data segment that the program accesses
-        'ES': new Register(),            // Far pointer addressing
-        'FS': new Register(),            // "
-        'GS': new Register(),            // "
-        'SS': new Register(),            // Stack, stack segment the program uses
-        // Index registers
-        'DI': new Register(),            // Destination, string, memory array copying, far pointer addressing
-        'SI': new Register(),            // Source, string, memory array copying
-        'BP': new Register(),            // Stack Base Pointer, holds the base address of the stack
-        'SP': new Register(),            // Stack Pointer, holds the top address of the stack
-        'IP': new Register(),            // Index Pointer, holds the offset of the next instruction, read only
-        'FLAGS': new Register()
+     this.registers = {
+       'A': new Register(),              // Accumulator, io, arithmetic, interrupt
+       'B': new Register(),             // Base, base pointer for memory access
+       'C': new Register(),             // Counter, loop counter, shifts
+       'D': new Register(),             // Data, io, arithmetic, interrupt
+       // Segment registers
+       'CS': new Register(),            // Code, segment in which the program runs
+       'DS': new Register(),            // Data, data segment that the program accesses
+       'ES': new Register(),            // Far pointer addressing
+       'FS': new Register(),            // "
+       'GS': new Register(),            // "
+       'SS': new Register(),            // Stack, stack segment the program uses
+       // Index registers
+       'DI': new Register(),            // Destination, string, memory array copying, far pointer addressing
+       'SI': new Register(),            // Source, string, memory array copying
+       'BP': new Register(),            // Stack Base Pointer, holds the base address of the stack
+       'SP': new Register(),            // Stack Pointer, holds the top address of the stack
+       'IP': new Register(),            // Index Pointer, holds the offset of the next instruction, read only
+       'FLAGS': new Register()
      };
 
      this.instructionSet = new InstructionSet();
@@ -77,7 +77,7 @@
        'ror':     this.ror,
        'not':     this.not,
        'mov':     this.mov
-     }
+     };
 
      // setup the clock, will not start until clock.start() is called
      this.clock.loop(this.clockSpeed, this.step, this);
@@ -134,19 +134,19 @@
        return;
      }
      switch (location) {
-       // get the register and set its value
-       case 'reg':
+     // get the register and set its value
+     case 'reg':
        let reg = this.registers[this.parseAddress(address)];
        reg.value = value;
        break;
 
-       // set the value at the given memory address
-       case 'mem':
+     // set the value at the given memory address
+     case 'mem':
        this.memory.setWord(address, value);
        break;
 
-       // get the memory address from memory and then set the value at it
-       case 'dmem':
+     // get the memory address from memory and then set the value at it
+     case 'dmem':
        let dAddr = this.memory.getWord(address);
        this.memory.setWord(dAddr, value);
        break;
@@ -164,22 +164,22 @@
        return;
      }
      switch (location) {
-       // get the value from a register
-       case 'reg':
+     // get the value from a register
+     case 'reg':
        let reg = this.registers[this.parseAddress(address)];
        return reg.value;
 
-       // get the value from memory
-       case 'mem':
+     // get the value from memory
+     case 'mem':
        return this.memory.getWord(address);
 
-       // get the address from memory and then get the value at that address
-       case 'dmem':
+     // get the address from memory and then get the value at that address
+     case 'dmem':
        let dAddr = this.memory.getWord(address);
        return this.memory.getWord(dAddr);
 
-       // return the immediate value
-       case 'imm':
+     // return the immediate value
+     case 'imm':
        return address;
      }
    }
@@ -235,16 +235,17 @@
      this.registers['FLAGS'].setBit(8, value);
    }
 
-   /**
-    * Set Flags
-    * Sets the flags register based on the result of an operation.
-    */
-   setFlags (result) {
-
-   }
-
    parseAddress (addr) {
      return Object.keys(this.registers)[addr];
+   }
+
+   /**
+    * Reg Addr
+    * Returns the numeric address of the given register.
+    * @param {string} key - the register name
+    */
+   regAddr (key) {
+     return Object.keys(this.registers).indexOf(key);
    }
 
    nop () {
@@ -287,18 +288,23 @@
      let dest = this.registers['A'];
      let src = this.retrieve(loc1, this.memory.getWord(this.IP+1));
      let result = dest.value * src;
-     console.log(result)
      // result is store in register A
      dest.value = result;
      this.IP += 2;
    }
 
+   /**
+    * DIV
+    * TODO: must implement 16 vs 8 bit width so if two 32 bit numbers are divided
+    * the dest will be DX:AX, if two 8 bit values then dest will be AX
+    */
    div (loc1) {
      this.currentInstruction = 'DIV';
      let dest = this.retrieve(loc1, this.memory.getWord(this.IP+1));
      let src = this.registers['A'];
      let quotient = Math.floor(dest / src.value);
      let remainder = dest % src.value;
+     console.log('quo', quotient, 'rem', remainder)
      src.high = remainder;
      src.low = quotient;
      this.IP += 2;
@@ -315,16 +321,70 @@
      this.IP += 2;
    }
 
+   pusha () {
+     this.currentInstruction = 'PUSHA';
+     // get everything that needs to be pushed
+     this.SP -= 1;
+     this.store('mem', this.SP, this.registers['A'].value);
+     this.SP -= 1;
+     this.store('mem', this.SP, this.registers['C'].value);
+     this.SP -= 1;
+     this.store('mem', this.SP, this.registers['D'].value);
+     this.SP -= 1;
+     this.store('mem', this.SP, this.registers['B'].value);
+     this.SP -= 1;
+     this.store('mem', this.SP, this.registers['BP'].value);
+     this.SP -= 1;
+     this.store('mem', this.SP, this.registers['SP'].value);
+     this.SP -= 1;
+     this.store('mem', this.SP, this.registers['SI'].value);
+     this.SP -= 1;
+     this.store('mem', this.SP, this.registers['DI'].value);
+     // update the SP to its new location
+     this.updateSP();
+     this.IP += 1;
+   }
+
    pop (loc1) {
      this.currentInstruction = 'POP';
      // get the value from the stack
      let value = this.retrieve('mem', this.SP);
-     this.SP += 1;
      // set the SP to its new value
      this.registers['SP'].value = this.SP;
+     this.SP += 1;
      // store it at the given location in memory
      this.store(loc1, this.memory.getWord(this.IP+1), value);
      this.IP += 2;
+   }
+
+   popa () {
+     this.currentInstruction = 'POPA';
+     let value;
+     value = this.memory.getWord(this.SP);
+     this.store('reg', this.regAddr('DI'), value);
+     this.SP += 1;
+     value = this.memory.getWord(this.SP);
+     this.store('reg', this.regAddr('SI'), value);
+     // the stored value of SP is discarded
+     this.SP += 2;
+     value = this.memory.getWord(this.SP);
+     this.store('reg', this.regAddr('BP'), value);
+     this.SP += 1;
+     value = this.memory.getWord(this.SP);
+     this.store('reg', this.regAddr('B'), value);
+     this.SP += 1;
+     value = this.memory.getWord(this.SP);
+     this.store('reg', this.regAddr('D'), value);
+     this.SP += 1;
+     value = this.memory.getWord(this.SP);
+     this.store('reg', this.regAddr('C'), value);
+     this.SP += 1;
+     value = this.memory.getWord(this.SP);
+     this.store('reg', this.regAddr('A'), value);
+     this.SP += 1;
+     // update the SP to its new location
+     this.updateSP();
+     this.IP += 1;
    }
 
    and (loc1, loc2) {
@@ -422,7 +482,7 @@
    }
 
    ja (loc1) {
-
+     // test the carry flag
    }
 
    je (loc1) {
@@ -462,7 +522,7 @@
    }
 
    jb (loc1) {
-
+     // test the carry flag
    }
 
    cmp (loc1, loc2) {
@@ -492,10 +552,6 @@
    }
 
    ror (loc1) {
-
-   }
-
-   not (loc1) {
 
    }
 

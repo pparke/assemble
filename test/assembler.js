@@ -1,8 +1,8 @@
-var Assembler = require('../src/scripts/app/objects/Assembler');
-var chai = require('chai');
-var assert = chai.assert;
-var expect = chai.expect
-var should = chai.should();
+import Assembler from '../src/app/objects/Assembler';
+var chai      = require('chai');
+var assert    = chai.assert;
+var expect    = chai.expect
+var should    = chai.should();
 
 describe('Tests for the Assembler class', function() {
 

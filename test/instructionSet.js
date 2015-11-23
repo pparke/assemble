@@ -1,6 +1,8 @@
 
-var InstructionSet = require('../src/scripts/app/objects/InstructionSet');
-var assert = require('chai').assert;
+import InstructionSet from '../src/app/objects/InstructionSet';
+import chai           from 'chai';
+
+let assert = require('chai').assert;
 
 describe('Tests for the InstructionSet class', function() {
 
